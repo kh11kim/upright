@@ -20,7 +20,18 @@ def watch_workspace(world, target_position: np.ndarray):
         cameraTargetPosition=target_position
     )
 
-def main(obj_name: str, qtn: Iterable):
+def main(obj_name: str, rot: np.ndarray, rot_type: str):
+    """
+    Args:
+        obj_name (str): the object name from YCB dataset
+        rot (np.ndarray): quaternion or rotation matrix
+        rot_type (str): "qtn"(quaternion), "mat"(matrix)
+    """
+    if rot_type == "qtn":
+        qtn = rot
+    if rot_type == "mat":
+        qtn = Rotation.from_matrix(rot).as_quat()
+
     obj_path = "ycb/"+ obj_name +"/google_16k"
 
     #create environment
@@ -50,4 +61,4 @@ def main(obj_name: str, qtn: Iterable):
 if __name__ == "__main__":
     obj_name = "004_sugar_box"
     qtn = np.array([-0.7755,0.0275,0.0609,-0.6277])
-    main(obj_name, qtn=qtn)
+    main(obj_name, rot=qtn, rot_type="qtn")
