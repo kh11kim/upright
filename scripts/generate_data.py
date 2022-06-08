@@ -51,13 +51,18 @@ def watch_workspace(world, target_position: np.ndarray):
         cameraTargetPosition=target_position
     )
 
-def get_predefined_joint_config(robot: Panda):
+def get_predefined_joint_config(robot: Panda, num_scene: int):
     target_point = [0.5, 0, 0.5]
-    ee_pose1 = Transform(rotation=Rotation.from_euler("zxy", [0, np.pi/3*2, np.pi/2]), translation=target_point)
-    ee_pose2 = Transform(rotation=Rotation.from_euler("zxy", [0, np.pi/3, np.pi/2]), translation=target_point)
-    ee_pose3 = Transform(rotation=Rotation.from_euler("zxy", [0, 0, np.pi/2]), translation=target_point)
+    yaw_list = np.linspace(0, np.pi/3*2, num_scene)
+    ee_pos_list = []
+    for yaw in yaw_list:
+        tf = Transform(rotation=Rotation.from_euler("zxy", [0, yaw, np.pi/2]), translation=target_point)
+        ee_pos_list.append(tf)
+    # ee_pose1 = Transform(rotation=Rotation.from_euler("zxy", [0, np.pi/3*2, np.pi/2]), translation=target_point)
+    # ee_pose2 = Transform(rotation=Rotation.from_euler("zxy", [0, np.pi/3, np.pi/2]), translation=target_point)
+    # ee_pose3 = Transform(rotation=Rotation.from_euler("zxy", [0, 0, np.pi/2]), translation=target_point)
     joint_configs = []
-    for pose in [ee_pose3, ee_pose2, ee_pose1]:
+    for pose in ee_pos_list:
         angles = robot.inverse_kinematics(pose=pose)
         if angles is not None:
             joint_configs.append(angles)
@@ -89,25 +94,27 @@ def write_setup(root: str, T_grasp_obj: Transform, T_grasp_upright:Transform, sc
     csv_path = Path(root) / "grasp_pose.csv"
     if not csv_path.exists():
         #create a file
-        col = ["scene_id", "ornx", "orny", "ornz", "ornw", "ornx0", "orny0", "ornz0", "ornw0"]
+        col = ["scene_id", "ornx", "orny", "ornz", "ornw", "ornx0", "orny0", "ornz0", "ornw0", "r11","r21","r31","r12","r22","r32", "r13", "r23", "r33"]
         with csv_path.open("w") as f:
             f.write(",".join(col))
             f.write("\n")
 
     # upright orientation label
-    ornx, orny, ornz, ornw = (T_grasp_obj.inverse() * T_grasp_upright).rotation.as_quat()
+    upright_orn = (T_grasp_obj.inverse() * T_grasp_upright).rotation
+    #ornx, orny, ornz, ornw = upright_orn.as_quat()
+
     # given orientation (used for debugging)
-    orn_x0, orn_y0, orn_z0, orn_w0 = T_grasp_obj.rotation.as_quat()
+    init_orn = T_grasp_obj.rotation
     #posx, posy, posz = T_grasp_upright.translation
     #ornx, orny, ornz, ornw = T_grasp_upright.rotation.as_quat()
     #write
-    col = [scene_id, ornx, orny, ornz, ornw, orn_x0, orn_y0, orn_z0, orn_w0]
+    col = [scene_id, *upright_orn.as_quat(), *init_orn.as_quat(), *upright_orn.as_matrix().flatten(order="F")]
     with csv_path.open("a") as f:
         row = ",".join([str(arg) for arg in col])
         f.write(row)
         f.write("\n")
 
-def main(obj_name: str, num_pose=5):
+def main(obj_name: str, num_pose=5, num_scene=3):
     obj_path = "ycb/"+ obj_name +"/google_16k"
 
     #create environment
@@ -122,7 +129,7 @@ def main(obj_name: str, num_pose=5):
     cam_position = [0.6, -0.4, 0.7]
     watch_workspace(world, target_point)
     cam = CameraHandler(cam_position, target_point, world, sm)   
-    config_list = get_predefined_joint_config(robot)
+    config_list = get_predefined_joint_config(robot, num_scene)
     
     robot.set_arm_angles(config_list[0])
     
@@ -149,4 +156,4 @@ def main(obj_name: str, num_pose=5):
 
 if __name__ == "__main__":
     obj_name = "004_sugar_box"
-    main(obj_name, num_pose=5)
+    main(obj_name, num_pose=5, num_scene=3)
