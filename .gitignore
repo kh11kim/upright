@@ -8,8 +8,10 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+ycb/
 build/
 data/images
+data/dataset
 develop-eggs/
 dist/
 downloads/

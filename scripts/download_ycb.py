@@ -18,10 +18,18 @@ output_directory = "./ycb"
 # Define a list of objects to download from
 # http://ycb-benchmarks.s3-website-us-east-1.amazonaws.com/
 #objects_to_download = "all"
-objects_to_download = ["006_mustard_bottle", 
-                       "002_master_chef_can",
-                       "003_cracker_box",
-                       "004_sugar_box"]
+objects_to_download = [
+    "002_master_chef_can",
+    "003_cracker_box",
+    "004_sugar_box",
+    "005_tomato_soup_can",
+    "006_mustard_bottle",
+    "008_pudding_box",
+    "010_potted_meat_can",
+    "021_bleach_cleanser",
+    "022_windex_bottle",
+    "025_mug"
+]
 
 # You can edit this list to only download certain kinds of files.
 # 'berkeley_rgbd' contains all of the depth maps and images from the Carmines.

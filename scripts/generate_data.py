@@ -63,35 +63,45 @@ def get_predefined_joint_config(robot: Panda):
             joint_configs.append(angles)
     return joint_configs
 
-def get_grasp_config(obj_height: float, robot: Panda, obj: Body, world: BulletWorld, num_yaw_grid=10):
+def get_grasp_config(obj_height: float, robot: Panda, obj: Body):
+    #np.random.seed(2)
     z_offset = np.random.uniform(low=0, high=obj_height) - obj_height/2
     azi, alt = np.random.uniform(0, np.pi*2), np.random.uniform(0, np.pi/2)
-    yaw = np.random.uniform(0, np.pi*2)
     R_rot = Rotation.from_euler("xyz", [-alt,0,azi])
-    T_obj = Transform(translation=[0.5, 0, 0.5])
+    R_rot_azi_only = Rotation.from_euler("xyz", [0,0,azi])
+    #grasp_frame
     T_obj_grasp0 = Transform(rotation=Rotation.from_euler("xyz", [0, np.pi/2, 0]), translation=[0,0,z_offset])
     T_obj_grasp = Transform(R_rot * T_obj_grasp0.rotation, translation=T_obj_grasp0.translation)
-    robot.get_ee_pose() * T_obj_grasp.inverse()
+    T_obj_grasp_azi_only = Transform(R_rot_azi_only * T_obj_grasp0.rotation, translation=T_obj_grasp0.translation)
+    T_obj = Transform(translation=[0.5, 0, 0.5])
+    yaw = np.random.uniform(0, np.pi*2)
+    
+    #robot.get_ee_pose() * T_obj_grasp.inverse()
     T_grasp_obj = T_obj_grasp.inverse()
-
     T_grasp_obj_assigned = Transform(Rotation.from_euler("zyx",[0,0,yaw])) * T_grasp_obj
+    T_grasp_obj_assigned_alt_only = Transform(Rotation.from_euler("zyx",[0,0,yaw])) * T_obj_grasp_azi_only.inverse()
     T_obj = robot.get_ee_pose() * T_grasp_obj_assigned
+    T_upright_orn = robot.get_ee_pose() * T_grasp_obj_assigned_alt_only
     obj.set_base_pose(T_obj)
-    return T_grasp_obj_assigned
+    return T_grasp_obj_assigned, T_grasp_obj_assigned_alt_only
 
-def write_setup(root: str, pose: Transform, scene_id: str):
+def write_setup(root: str, T_grasp_obj: Transform, T_grasp_upright:Transform, scene_id: str):
     csv_path = Path(root) / "grasp_pose.csv"
     if not csv_path.exists():
         #create a file
-        col = ["scene_id", "posx", "posy", "posz", "ornx", "orny", "ornz", "ornw"]
+        col = ["scene_id", "ornx", "orny", "ornz", "ornw", "ornx0", "orny0", "ornz0", "ornw0"]
         with csv_path.open("w") as f:
             f.write(",".join(col))
             f.write("\n")
 
-    posx, posy, posz = pose.translation
-    ornx, orny, ornz, ornw = pose.rotation.as_quat()
+    # upright orientation label
+    ornx, orny, ornz, ornw = (T_grasp_obj.inverse() * T_grasp_upright).rotation.as_quat()
+    # given orientation (used for debugging)
+    orn_x0, orn_y0, orn_z0, orn_w0 = T_grasp_obj.rotation.as_quat()
+    #posx, posy, posz = T_grasp_upright.translation
+    #ornx, orny, ornz, ornw = T_grasp_upright.rotation.as_quat()
     #write
-    col = [scene_id, posx, posy, posz, ornx, orny, ornz, ornw]
+    col = [scene_id, ornx, orny, ornz, ornw, orn_x0, orn_y0, orn_z0, orn_w0]
     with csv_path.open("a") as f:
         row = ",".join([str(arg) for arg in col])
         f.write(row)
@@ -123,12 +133,12 @@ def main(obj_name: str, num_pose=5):
     )
     _, extent = obj.get_AABB(output_center_extent=True)
     for i in range(num_pose):
-        T_grasp_obj = get_grasp_config(extent[-1], robot, obj, world)
-        print(f"grasp pos : {T_grasp_obj.translation}")
-        print(f"grasp rot : {T_grasp_obj.rotation.as_quat()}")
+        T_grasp_obj, T_grasp_upright = get_grasp_config(extent[-1], robot, obj)
+        # print(f"grasp pos : {T_grasp_obj.translation}")
+        # print(f"grasp rot : {T_grasp_obj.rotation.as_quat()}")
         
         scene_id = uuid.uuid4().hex
-        write_setup("data/images", T_grasp_obj, scene_id)
+        write_setup("data/images", T_grasp_obj, T_grasp_upright, scene_id)
         for i, q in enumerate(config_list):
             robot.set_arm_angles(q)
             ee_pose = robot.get_ee_pose()
