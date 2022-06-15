@@ -28,7 +28,12 @@ objects_to_download = [
     "010_potted_meat_can",
     "021_bleach_cleanser",
     "022_windex_bottle",
-    "025_mug"
+    "025_mug",
+    "019_pitcher_base", 
+    "026_sponge", 
+    "048_hammer", 
+    "053_mini_soccer_ball", 
+    "077_rubiks_cube"
 ]
 
 # You can edit this list to only download certain kinds of files.

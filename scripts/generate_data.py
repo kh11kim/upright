@@ -71,7 +71,7 @@ def get_predefined_joint_config(robot: Panda, num_scene: int):
 def get_grasp_config(obj_height: float, robot: Panda, obj: Body):
     #np.random.seed(2)
     z_offset = np.random.uniform(low=0, high=obj_height) - obj_height/2
-    azi, alt = np.random.uniform(0, np.pi*2), np.random.uniform(0, np.pi/2)
+    azi, alt = 0, np.pi/4#np.random.uniform(0, np.pi*2), np.random.uniform(0, np.pi/2)
     R_rot = Rotation.from_euler("xyz", [-alt,0,azi])
     R_rot_azi_only = Rotation.from_euler("xyz", [0,0,azi])
     #grasp_frame
@@ -79,7 +79,7 @@ def get_grasp_config(obj_height: float, robot: Panda, obj: Body):
     T_obj_grasp = Transform(R_rot * T_obj_grasp0.rotation, translation=T_obj_grasp0.translation)
     T_obj_grasp_azi_only = Transform(R_rot_azi_only * T_obj_grasp0.rotation, translation=T_obj_grasp0.translation)
     T_obj = Transform(translation=[0.5, 0, 0.5])
-    yaw = np.random.uniform(0, np.pi*2)
+    yaw = np.pi/2 #np.random.uniform(0, np.pi*2)
     
     #robot.get_ee_pose() * T_obj_grasp.inverse()
     T_grasp_obj = T_obj_grasp.inverse()

@@ -12,6 +12,9 @@ ycb/
 build/
 data/images
 data/dataset
+data/evaluation
+data/eval-models
+data/visualize
 develop-eggs/
 dist/
 downloads/

@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Union
 import scipy.spatial.transform
+import pickle
 
 def qtn_conj(qtn):
     return np.hstack([-qtn[:3], qtn[-1]])
@@ -99,7 +100,17 @@ class Transform:
         rotation = self.rotation.inv()
         translation = -rotation.apply(self.translation)
         return self.__class__(rotation, translation)
-
+    
+    def save(self, filename):
+        with open(filename, "wb") as f:
+            pickle.dump(self, f)
+    
+    @classmethod
+    def from_file(cls, filename):
+        with open(filename, "rb") as f:
+            tf = colors = pickle.load(f)
+        return tf
+        
     @classmethod
     def from_matrix(cls, m):
         """Initialize from a 4x4 matrix."""
